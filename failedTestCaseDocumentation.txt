@@ -1,0 +1,103 @@
+FAILED TEST CASE 1:
+the loops exit after #4 with this board array:
+
+    3 3 0 0 
+    V V V V 
+0 > 0 0 0 0 < 0
+3 > 0 0 0 0 < 0
+0 > 0 0 0 0 < 0
+0 > 0 0 0 0 < 0
+    ^ ^ ^ ^ 
+    0 0 2 3 
+
+and this guess array:
+
+      3/0 3/0 0/0 0/0 
+       V   V   V   V   
+0/0 >  6   6   24  24 < 0
+3/0 >  6   12  22  30 < 0
+0/0 >  24  22  22  14 < 0
+0/0 >  24  30  14  6  < 0
+       ^   ^   ^   ^   
+       0   0   2   3   
+       
+the reason why this occurs is that 4 is not a valid guess for (3, 3) but the program doesn't know how to remove it.
+it's not a valid guess there because if if 4 is placed there, the only other coordinates for 4 candidates are (4,1), (4,2), (1,4), and (1,2), meaning that some combination of row 1|2 & column 1|2 will be left without a 4.
+if i manually go in and remove 4 as a guess from (3, 3), the program still can't solve the puzzle, outputting this board and this guess array:
+
+    3 3 0 0 
+    V V V V 
+0 > 0 0 0 0 < 0
+3 > 0 0 0 0 < 0
+0 > 0 0 0 0 < 0
+0 > 0 0 0 0 < 0
+    ^ ^ ^ ^ 
+    0 0 2 3 
+
+      3/0 3/0 0/0 0/0 
+       V   V   V   V   
+0/0 >  6   6   24  24 < 0
+3/0 >  6   12  22  30 < 0
+0/0 >  24  22  6   14 < 0
+0/0 >  24  30  12  6  < 0
+       ^   ^   ^   ^   
+       0   0   2   3   
+       
+all this changes is removing 1 as a guess from (4, 3). 
+i'm not really sure where to go from here. any help would be appreciated.
+
+FAILED TEST CASE 2:
+the loop exits after loop # 4 with this board array:
+
+    0 0 0 3 3 
+    V V V V V 
+0 > 5 0 0 0 0 < 0
+0 > 4 0 0 0 0 < 3
+3 > 0 0 0 0 0 < 0
+0 > 0 2 0 0 4 < 0
+0 > 2 0 0 0 0 < 0
+    ^ ^ ^ ^ ^ 
+    4 0 2 2 0 
+ 
+and this guess array:
+
+      0/0 0/0 0/0 3/0 3/0 
+       V   V   V   V   V   
+0/0 >  32  26  30  14  10 < 0
+0/0 >  16  42  46  14  6  < 3
+3/0 >  10  26  62  62  38 < 0
+0/0 >  10  4   42  42  16 < 0
+0/0 >  4   58  26  26  40 < 0
+       ^   ^   ^   ^   ^   
+       4   0   2   2   0  
+        
+I'm not sure where to go from here, honestly
+
+FAILED TEST CASE 3:
+the loop exits after loop #5 with this board array:
+
+    0 0 0 1 0 5 
+    V V V V V V 
+0 > 5 0 0 6 0 2 < 0
+0 > 2 0 0 0 5 3 < 0
+3 > 0 5 0 0 0 4 < 2
+0 > 6 0 5 2 0 1 < 4
+2 > 0 0 0 0 0 5 < 0
+3 > 0 0 0 5 0 6 < 0
+    ^ ^ ^ ^ ^ ^ 
+    0 0 3 2 0 0 
+    
+and this guess array:
+
+      0/0 0/0 0/0 1/0 0/0 5/0 
+       V   V   V   V   V   V   
+0/0 >  32  26  26  64  26  4  < 0
+0/0 >  4   82  82  18  32  8  < 0
+3/0 >  10  32  68  10  68  16 < 2
+0/0 >  64  24  32  4   24  2  < 4
+2/0 >  26  78  6   26  94  32 < 0
+3/0 >  24  14  12  32  30  64 < 0
+       ^   ^   ^   ^   ^   ^   
+       0   0   3   2   0   0   
+       
+again, not really sure what the issue is here. :/

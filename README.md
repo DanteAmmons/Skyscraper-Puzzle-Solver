@@ -28,3 +28,6 @@ implemented the hypothetical case as a recursion tree.
 i'm still going to be doing some testing on this though just to make sure. 
 next steps is converting this to JavaScript and implementing it in a userscript, but that's for a while away.
 i'm kinda tired of this project
+
+also worth noting that the failed test cases file is out of date, this now works on all of them.
+i'm keeping that file up for posterity's sake

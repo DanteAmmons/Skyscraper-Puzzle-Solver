@@ -1,17 +1,18 @@
-/*
  * this is the same as the weekly skyscrapers solver, but now, you get to choose the size of your board!
  */
 package skyscrapersSolver;
 import java.util.*;
 public class skyscrapersSolver {
 
-/**************************************debugging/printing functions*****************************************/
+/********************************************global variables***********************************************/
     static int s = 0;
-	/*
+    
+/**************************************printing/debugging functions*****************************************/
+   
+    /*
      * this function only for debugging
      */
      public static void printArray(int[] input) {
-        System.out.print('\n');
         System.out.print("{");
         for(int i = 0; i < input.length; i++) {
             System.out.print(input[i]);
@@ -20,6 +21,7 @@ public class skyscrapersSolver {
             }
         }
         System.out.print("},");
+        System.out.print('\n');
     }
   
     /*
@@ -105,7 +107,6 @@ public class skyscrapersSolver {
         System.out.print("\n");
     }
     
-     
 /****************************************boolean utility functions******************************************/
      
      /*
@@ -197,6 +198,26 @@ public class skyscrapersSolver {
      			 return vbi;
      		 }
      	 }
+      }
+      
+      /*
+       * method that checks if the puzzle is complete
+       * if the puzzle is complete, than every single array list in both rowPerms and colPerms should only have 1 value, and that's what this method checks
+       * since there is no way for every array list in rowPerms to only have 1 value and for any array list in colPerms to have >1 value, this method onlly checks rowPerms
+       * INPUTS:
+       * row - rowPerms
+       * OUTPUTS:
+       * true if every single array list in rowPerms has a size of 1
+       * false otherwise
+       */
+      public static boolean isComplete(ArrayList<ArrayList<int[]>> row) {
+    	  boolean ic = true;
+    	  int a = 0;
+    	  while(a<s&&ic) {
+    		  ic = row.get(a).size() == 1;
+    		  a++;
+    	  }
+    	  return ic;
       }
       
 /**********************************int/int[]-returning utility functions************************************/
@@ -609,6 +630,160 @@ public class skyscrapersSolver {
     	}
     	columnFlaggingRoutine(col, guesses, newGuesses);
     }
+/*****************************************hypothetical functions********************************************/
+   
+    /*
+     * figured initializing all the variables properly for the hypothetical state would take a while, so i made it its own method
+     * copies over all values from board to hypoBoard and copies over all values from guesses to hypoGuesses
+     * initializes each individual array list in rowReceptacle and colReceptacle
+     * also puts all two guess values into twoGuesses
+     * INPUTS:
+     * same thing they are in the main function
+     */
+    public static void hypoSetup(int[][]board, int[][] hypoBoard, int[][] guesses, int[][] hypoGuesses, ArrayList<ArrayList<int[]>> rowReceptacle, ArrayList<ArrayList<int[]>> colReceptacle, int[][] twoGuesses){
+    	for(int a = 0; a<=s+1; a++) {
+    		for(int b = 0; b<=s+1; b++) {
+    			hypoBoard[a][b] = board[a][b];
+    			hypoGuesses[a][b] = guesses[a][b];
+    		}
+    	}
+    	for(int c = 0; c<s; c++) {
+    		rowReceptacle.add(new ArrayList<int[]>());
+    		colReceptacle.add(new ArrayList<int[]>());
+    	}
+    	int d = 1, e = 2;
+    	for(int g = 0; g<(s*(s-1))/2; g++) {
+    		twoGuesses[g][0] = ((int)Math.pow(2, d))+((int)Math.pow(2, e));
+    		twoGuesses[g][1] = d;
+    		twoGuesses[g][2] = e;
+    		if(d==e-1) {
+    			d = 1;
+    			e++;
+    		}else {
+    			d++;
+    		}//this is the algorithm for putting every sum of 2 distinct numbers from 1 to s into an array
+    	}
+    }
+    
+    /*
+     * method that finds an arbitrary cell in the hypoGuesses matrix that only has 2 guesses and outputs it
+     * INPUTS:
+     * hypoGuesses - same as main function
+     * twoGuessses - same as main function
+     * OUTPUTS: 
+     * a 1x4 array with these values:
+     * [x coordinate of 2 guesses cell, y coordinate of 2 guesses cell, lower of the 2 guesses, higher of the 2 guesses]
+     */
+    public static int[] findTwoGuesses(int[][] hypoGuesses, int[][] twoGuesses) {
+    	int a = 0, b = 1, c = -1;
+    	boolean twoGuessesFound = false;
+    	while(!twoGuessesFound&&b<s+2) {
+    		a++;
+    		if(a==s+1) {
+    			a = 1;
+    			b++;
+    		}//i'm doing all this incrementing weirdly because i want it to return the a, b, and twoGuesses[c] value the moment twoGuessesFound turns out to be true
+    		System.out.println(a+" "+b);
+    		while(!twoGuessesFound&&c<(s*(s-1))/2-1) {
+    			c++;
+    			twoGuessesFound = hypoGuesses[a][b]==twoGuesses[c][0];
+    		}
+    		if(!twoGuessesFound) {
+    			c = -1;
+    		}
+    	}
+    	int[] ftg = {a, b, twoGuesses[c][1], twoGuesses[c][2]};
+    	return ftg;
+    }
+ 
+    /*
+     * method that removes row permutations from row array lists that contradict with existing guesses in the guess matrix
+     * some similarities with the initial column input functions
+     * also checks to make sure that perms isn't empty by the end of the function
+     * INPUT:
+     * row - row index
+     * perms - array list of permutations that is being analyzed
+     * receptacle - array list that all permutations being thrown out of perms is entered into
+     * guesses - this is actually hypoGuesses
+     * OUTPUT:
+     * true if there is still at least 1 array in perms
+     * false otherwise
+     */
+    public static boolean removeInvalidRowPermsHypo(int row, ArrayList<int[]> perms, ArrayList<int[]> receptacle, int[][] guesses) {
+    	int[] exGuesses = new int[s];
+    	for(int g = 0; g<s; g++) {
+    		exGuesses[g] = guesses[row][g+1];
+    	}
+    	int[] newGuesses = new int[s];
+    	int x = 0;
+    	while(x<perms.size()) {
+    		//i'm making this a while loop that only incs when it's a valid perm candidate bc i don't really trust for loop iteration over an array list
+    		int[] permCandidate = perms.get(x), permCandidateGuesses = convertToGuesses(permCandidate);
+    		//following if statement: 
+    		//if perms is a valid permutation candidate, increment the index counter and store perms as guesses in newGuesses. if not, drop from the array list
+    		//this way i'm sure that I iterate over every permutation in perms and every permutation at an index before x is a valid permutation
+    		if(validGuess(permCandidateGuesses, exGuesses)) {
+    			x++;
+    			for(int a = 0; a<permCandidate.length; a++) {
+    				newGuesses[a] = newGuesses[a]|permCandidateGuesses[a];
+    			}
+    		}else {
+    			int[] temp = perms.remove(x);
+    			receptacle.add(temp);
+    		}
+    	}
+    	rowFlaggingRoutine(row, guesses, newGuesses);
+    	boolean rirph = perms.size()!=0;
+    	return rirph;
+    }
+    
+    /*
+     * method that removes column permutations from column array lists that contradict with existing guesses in the guess matrix
+     * some similarities with the initial column input functions
+     * also checks to make sure that perms isn't empty by the end of the function
+     * INPUT:
+     * col - column index
+     * perms - array list of permutations that is being analyzed
+     * receptacle - array list that every permutation thrown out of perms goes into
+     * guesses - self-explanatory
+     * OUTPUT:
+     * true if perms wasn't emptied by this function
+     * false otherwise
+     */
+    public static boolean removeInvalidColumnPermsHypo(int col, ArrayList<int[]> perms, ArrayList<int[]> receptacle, int[][] guesses) {
+    	int[] exGuesses = new int[s];
+    	for(int g = 0; g<s; g++) {
+    		exGuesses[g] = guesses[g+1][col];
+    	}
+    	int[] newGuesses = new int[s];
+    	int x = 0;
+    	while(x<perms.size()) {
+    		//i'm making this a while loop that only incs when it's a valid perm candidate bc i don't really trust for loop iteration over an array list
+    		int[] permCandidate = perms.get(x), permCandidateGuesses = convertToGuesses(permCandidate);
+    		//following if statement: 
+    		//if perms is a valid permutation candidate, increment the index counter and store perms as guesses in newGuesses. if not, drop from the array list
+    		//this way i'm sure that I iterate over every permutation in perms and every permutation at an index before x is a valid permutation
+    		if(validGuess(permCandidateGuesses, exGuesses)) {
+    			x++;
+    			for(int a = 0; a<permCandidate.length; a++) {
+    				newGuesses[a] = newGuesses[a]|permCandidateGuesses[a];
+    			}
+    		}else {
+    			receptacle.add(perms.remove(x));
+    		}
+    	}
+    	columnFlaggingRoutine(col, guesses, newGuesses);
+    	boolean ricph = perms.size()!=0;
+    	return ricph;
+    }
+    
+    public static void returnFromReceptacle(ArrayList<ArrayList<int[]>> receptacle, ArrayList<ArrayList<int[]>> original) {
+    	for(int i = 0; i<receptacle.size(); i++) {
+    		for(int[] j : receptacle.get(i)) {
+    			original.get(i).add(j);
+    		}
+    	}
+    }
     
 /**********************************************main function************************************************/
 
@@ -664,7 +839,7 @@ public class skyscrapersSolver {
         /*i have to create an array list of ArrayList<int[]> because i need a way to iterate over all my 
           array lists that i'm storing int arrays in and I can't make an array of ArrayList<int[]>. hope this
           doesn't create any pointer fuckery*/
-        /*fucking java man*/
+        /*fucking java man*/      
         /**********parse edge input subsection**********/
         
         System.out.println("input the top edge height values from left to right, no spaces. use 0 for null height values");
@@ -801,6 +976,112 @@ public class skyscrapersSolver {
             printGuesses(board,guesses);
             System.out.print("\n");
         }
+        for(int t = 0; t<s; t++) {
+        	System.out.println(rowPerms.get(t).size() +" "+ colPerms.get(t).size());
+        }
         fromConsole.close();
+        /******************************HYPOTHETICAL SECTION******************************/
+        if(!isComplete(rowPerms)) {
+        	 //so here's where I explain what i'm doing
+        	 //basically, if the program is able to go through all those loops without solving the puzzle, it enters a hypothetical state
+        	 //in the guessing state, the program finds an arbitrary cell with only 2 valid guesses and arbitrarily guesses 1 of the 2 guesses
+        	 //the program then takes that guess to its logical conclusion, i.e. treating that guess as if it's fact.
+        	 //if the guess is found out to be incorrect, i.e. any of the array lists in rowPerms or colPerms has a size of 0, hypothetical state will abort and the other of the two guesses will be input
+        	 
+        	int[][] hypoBoard = new int[s+2][s+2], hypoGuesses = new int[s+2][s+2];
+        	//hypothetical board array and guesses array that's going to be what i'm working in in the hypothetical section
+        	ArrayList<ArrayList<int[]>> rowReceptacle = new ArrayList<ArrayList<int[]>>(), colReceptacle = new ArrayList<ArrayList<int[]>>();
+        	//i'm going to be removing arrays from the array lists in rowPerms and colPerms, but I don't want to just throw away those arrays in case the hypothetical is invalid
+        	//so i'm going to be putting them in these receptacle array lists, so that if the guess turns out to be invalid, i can just put them right back
+        	int[][] twoGuesses = new int[(s*(s-1))/2][3];
+        	//0-index column becomes an array of every possible value a guess array cell with two guesses can have
+        	//values will be [2^1+2^2, 2^1+2^3,....., 2^(s-2)+2^s, 2^(s-1)+2^s]
+        	//1-index and 2-index columns are just which powers of 2 are being summed, makes the findTwoGuesses function easier
+        	//it's triangular numbers so that's why it has that many rows
+        	hypoSetup(board, hypoBoard, guesses, hypoGuesses, rowReceptacle, colReceptacle, twoGuesses);
+        	//method that just sets everything up the way i've described it
+        	int[] hypoCandidate = findTwoGuesses(hypoGuesses, twoGuesses);
+        	insertNumberRoutine(hypoBoard, hypoGuesses, hypoCandidate[2], hypoCandidate[0], hypoCandidate[1]);
+        	//arbitrarily guesses the lower of the 2 guesses at the arbitrary 2-guess cell
+        	System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") is "+hypoCandidate[2]);
+        	h = 1;
+        	int o = 1;
+        	moreWorkToBeDone = true;
+        	boolean validHypothetical = true;
+        	while(moreWorkToBeDone&&validHypothetical) {
+            	System.out.println("~~~~~~~~~~~~~~~~~~~~~HYPOTHETICAL LOOP NUMBER "+h+"~~~~~~~~~~~~~~~~~~~~~");
+            	h++;
+            	o = 1;
+            	moreWorkToBeDone = false;//exits while loop once all there are no more guess flags
+                checkForSingularGuesses(hypoBoard, hypoGuesses);//checks the guesses matrix to see if any of the cells only have 1 guess
+                while(o<=s&&validHypothetical) {//changed this to a while loop bc it's also dependent on if it's a valid hypothetical
+                	if(hypoGuesses[o][0]==1) {//triggers if there's row a guess flag
+                		hypoGuesses[o][0] = 0;//resets guess flag
+                		moreWorkToBeDone = true;
+                		permsTemp = rowPerms.get(o-1);
+                		permsTemp2 = rowReceptacle.get(o-1);
+                		validHypothetical = removeInvalidRowPermsHypo(o, permsTemp, permsTemp2, hypoGuesses);
+                		//removes invalid row permutations from the relevant row permutations array list and does guess flagging       		
+                		rowPerms.set(o-1, permsTemp);
+                		rowReceptacle.set(o-1, permsTemp2);                		
+                	}
+                	o++;
+                }
+                o = 1;
+                while(o<=s&&validHypothetical) {//doesn't enter this while loop if it's been flagged as an invalid hypothetical
+                	if(hypoGuesses[0][o]==1) {
+                		hypoGuesses[0][o] = 0;
+                		moreWorkToBeDone = true;
+                		permsTemp = colPerms.get(o-1);
+                		permsTemp2 = colReceptacle.get(o-1);
+                		validHypothetical = removeInvalidColumnPermsHypo(o,permsTemp, permsTemp2,hypoGuesses);
+                		colPerms.set(o-1, permsTemp);
+                		colReceptacle.set(o-1, permsTemp2);
+                	}
+                	o++;
+                }
+                printBoard(hypoBoard);
+                System.out.print("\n");
+                printGuesses(hypoBoard,hypoGuesses);
+                System.out.print("\n");
+            }
+        	if(!validHypothetical) {
+        		System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") as "+hypoCandidate[2]+" was incorrect\nit's true value is "+hypoCandidate[3]);
+        		returnFromReceptacle(colReceptacle, colPerms);
+        		returnFromReceptacle(rowReceptacle, rowPerms);
+        		insertNumberRoutine(board, guesses, hypoCandidate[3], hypoCandidate[0], hypoCandidate[1]);
+        		h = 1;
+                moreWorkToBeDone = true;
+                while(moreWorkToBeDone) {
+                	System.out.println("~~~~~~~~~~~~~~~~~~~~~LOOP NUMBER "+h+"~~~~~~~~~~~~~~~~~~~~~");
+                	h++;
+                	moreWorkToBeDone = false;//exits while loop once all there are no more guess flags
+                    checkForSingularGuesses(board, guesses);//checks the guesses matrix to see if any of the cells only have 1 guess
+                    for(int q = 1; q<=s; q++) {//loop for iterating over rows
+                    	if(guesses[q][0]==1) {//triggers if there's row a guess flag
+                    		guesses[q][0] = 0;//resets guess flag
+                    		moreWorkToBeDone = true;
+                    		permsTemp = rowPerms.get(q-1);
+                    		removeInvalidRowPerms(q, permsTemp, guesses);
+                    		//removes invalid row permutations from the relevant row permutations array list and does guess flagging
+                    		rowPerms.set(q-1, permsTemp);
+                    	}
+                    }
+                    for(int r = 1; r<=s; r++) {
+                    	if(guesses[0][r]==1) {
+                    		guesses[0][r] = 0;
+                    		moreWorkToBeDone = true;
+                    		permsTemp = colPerms.get(r-1);
+                    		removeInvalidColumnPerms(r,permsTemp,guesses);
+                    		colPerms.set(r-1, permsTemp);
+                    	}
+                    }
+                    printBoard(board);
+                    System.out.print("\n");
+                    printGuesses(board,guesses);
+                    System.out.print("\n");
+                }      		
+        	}
+        }
     }
 }

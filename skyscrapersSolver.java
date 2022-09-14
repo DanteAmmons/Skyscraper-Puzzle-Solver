@@ -1,3 +1,4 @@
+/*
  * this is the same as the weekly skyscrapers solver, but now, you get to choose the size of your board!
  */
 package skyscrapersSolver;
@@ -677,19 +678,18 @@ public class skyscrapersSolver {
     public static int[] findTwoGuesses(int[][] hypoGuesses, int[][] twoGuesses) {
     	int a = 0, b = 1, c = -1;
     	boolean twoGuessesFound = false;
-    	while(!twoGuessesFound&&b<s+2) {
+    	while(!twoGuessesFound&&b<s+1) {
     		a++;
     		if(a==s+1) {
     			a = 1;
     			b++;
     		}//i'm doing all this incrementing weirdly because i want it to return the a, b, and twoGuesses[c] value the moment twoGuessesFound turns out to be true
-    		System.out.println(a+" "+b);
     		while(!twoGuessesFound&&c<(s*(s-1))/2-1) {
     			c++;
     			twoGuessesFound = hypoGuesses[a][b]==twoGuesses[c][0];
     		}
     		if(!twoGuessesFound) {
-    			c = -1;
+    			c = -1;//resets the two guesses counter if the two guesses haven't been found yet
     		}
     	}
     	int[] ftg = {a, b, twoGuesses[c][1], twoGuesses[c][2]};
@@ -777,12 +777,145 @@ public class skyscrapersSolver {
     	return ricph;
     }
     
+    /*
+     * method that puts everything in array list receptacle into array list original
+     * by the end, every array list in receptacle should be empty and every array list in original should include what it came into the method with 
+     * + every array that was in the corresponding receptacle array list index when the method was called
+     * INPUTS:
+     * receptacle - array list of array lists that are each getting emptied
+     * original - array list of array lists that are each getting filled
+     */
     public static void returnFromReceptacle(ArrayList<ArrayList<int[]>> receptacle, ArrayList<ArrayList<int[]>> original) {
     	for(int i = 0; i<receptacle.size(); i++) {
     		for(int[] j : receptacle.get(i)) {
-    			original.get(i).add(j);
+    			if(!original.get(i).contains(j)) {//for some reason i would sometimes get duplicates so this is a way around that
+    			original.get(i).add(j);    				
+    			}
     		}
     	}
+    }
+
+    
+    /*
+     * method that replicates the logic of the looping section
+     */
+    public static boolean hypotheticalRecursionTree(int[][] board, int[][] guesses, ArrayList<ArrayList<int[]>> rowPerms, ArrayList<ArrayList<int[]>> colPerms, int recursionLevel) {
+	    int[][] hypoBoard = new int[s+2][s+2], hypoGuesses = new int[s+2][s+2];
+	   	//hypothetical board array and guesses array that's going to be what i'm working in in the hypothetical section
+	   	ArrayList<ArrayList<int[]>> rowReceptacle = new ArrayList<ArrayList<int[]>>(), colReceptacle = new ArrayList<ArrayList<int[]>>();
+	   	//i'm going to be removing arrays from the array lists in rowPerms and colPerms, but I don't want to just throw away those arrays in case the hypothetical is invalid
+	   	//so i'm going to be putting them in these receptacle array lists, so that if the guess turns out to be invalid, i can just put them right back
+	   	int[][] twoGuesses = new int[(s*(s-1))/2][3];
+	   	//0-index column becomes an array of every possible value a guess array cell with two guesses can have
+	   	//values will be [2^1+2^2, 2^1+2^3,....., 2^(s-2)+2^s, 2^(s-1)+2^s]
+	   	//1-index and 2-index columns are just which powers of 2 are being summed, makes the findTwoGuesses function easier
+	   	//it's triangular numbers so that's why it has that many rows
+	   	hypoSetup(board, hypoBoard, guesses, hypoGuesses, rowReceptacle, colReceptacle, twoGuesses);
+	   	//method that just sets everything up the way i've described it
+	   	int[] hypoCandidate = findTwoGuesses(hypoGuesses, twoGuesses);
+	   	insertNumberRoutine(hypoBoard, hypoGuesses, hypoCandidate[2], hypoCandidate[0], hypoCandidate[1]);
+	   	//arbitrarily guesses the lower of the 2 guesses at the arbitrary 2-guess cell
+	   	System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") is "+hypoCandidate[2]+" at recursion level "+recursionLevel);
+	   	int h = 1, o=1;
+	   	boolean validHypothetical = true, moreWorkToBeDone = true;
+	   	while(moreWorkToBeDone&&validHypothetical) {
+	   		System.out.println("~~~~~~~~~~~~~~~~~~~~~HYPOTHETICAL LOOP NUMBER "+h+" at recursion level "+recursionLevel+"~~~~~~~~~~~~~~~~~~~~~");
+	       	h++;
+	       	o = 1;
+	       	moreWorkToBeDone = false;//exits while loop once all there are no more guess flags
+	           checkForSingularGuesses(hypoBoard, hypoGuesses);//checks the guesses matrix to see if any of the cells only have 1 guess
+	           while(o<=s&&validHypothetical) {//changed this to a while loop bc it's also dependent on if it's a valid hypothetical
+	           	if(hypoGuesses[o][0]==1) {//triggers if there's row a guess flag
+	           		hypoGuesses[o][0] = 0;//resets guess flag
+	           		moreWorkToBeDone = true;
+	           		validHypothetical = removeInvalidRowPermsHypo(o, rowPerms.get(o-1), rowReceptacle.get(o-1), hypoGuesses);
+	           		//removes invalid row permutations from the relevant row permutations array list and does guess flagging       		      		
+	           	}
+	           	o++;
+	           }
+	           o = 1;
+	           while(o<=s&&validHypothetical) {//doesn't enter this while loop if it's been flagged as an invalid hypothetical
+	           	if(hypoGuesses[0][o]==1) {
+	           		hypoGuesses[0][o] = 0;
+	           		moreWorkToBeDone = true;
+	           		validHypothetical = removeInvalidColumnPermsHypo(o,colPerms.get(o-1), colReceptacle.get(o-1),hypoGuesses);
+	           	}
+	           	o++;
+	           }
+	           printBoard(hypoBoard);
+	           System.out.print("\n");
+	           printGuesses(hypoBoard,hypoGuesses);
+	           System.out.print("\n");
+	           }
+	   	//so from here, there are 3 possible outcomes:
+	   	//outcome 1: guessing the value at (hypoCandidate[0], hypoCandidate[1]) to be hypoCandidate[2] yielded an invalid solution
+	   	//validHypothetical = false
+	   	//outcome 2: guessing the value at (hypoCandidate[0], hypoCandidate[1]) to be hypoCandidate[2] yielded a valid, complete solution
+	   	//validHypothetical = true, isComplete = true
+	   	//outcome 3: guessing the value at (hypoCandidate[0], hypoCandidate[1]) to be hypoCandidate[2] yielded an incomplete solution
+	   	//validHypothetical = true, isComplete = false
+	   	//for outcome 1, i always want to enter the 2nd hypothetical subsection, and for outcome 2, i basically want the function to end here
+	   	//but for outcome 3, more investigation is necessary, and this is where i want to implement the first instance of recursion
+	   	if(validHypothetical&&!isComplete(rowPerms)) {
+   			System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") as "+hypoCandidate[2]+" at recursion level "+recursionLevel+" was inconclusive\ngoing 1 recursion level deeper");		
+	   		validHypothetical = hypotheticalRecursionTree(hypoBoard, hypoGuesses, rowPerms, colPerms, recursionLevel+1);
+	   	}
+	   	if(!validHypothetical) {
+	   		//2nd hypothetical subsection
+	   		System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") as "+hypoCandidate[2]+" at recursion level "+recursionLevel+" was incorrect\ntrying out value of "+hypoCandidate[3]);   			
+	   		returnFromReceptacle(colReceptacle, colPerms);
+	   		returnFromReceptacle(rowReceptacle, rowPerms);
+	   		for(int a = 0; a<=s+1; a++) {
+	    		for(int b = 0; b<=s+1; b++) {
+	    			hypoBoard[a][b] = board[a][b];
+	    			hypoGuesses[a][b] = guesses[a][b];
+	    		}
+	   		}//resets colPerms, rowPerms, hypoBoard, and hypoGuesses
+	   		insertNumberRoutine(hypoBoard, hypoGuesses, hypoCandidate[3], hypoCandidate[0], hypoCandidate[1]);
+	           moreWorkToBeDone = true;
+	           validHypothetical = true;
+	           while(moreWorkToBeDone&&validHypothetical) {
+	        	   System.out.println("~~~~~~~~~~~~~~~~~~~~~HYPOTHETICAL LOOP NUMBER "+h+" at recursion level "+recursionLevel+"~~~~~~~~~~~~~~~~~~~~~");
+	              	h++;
+	              	o = 1;
+	              	moreWorkToBeDone = false;//exits while loop once all there are no more guess flags
+	                  checkForSingularGuesses(hypoBoard, hypoGuesses);//checks the guesses matrix to see if any of the cells only have 1 guess
+	                  while(o<=s&&validHypothetical) {//changed this to a while loop bc it's also dependent on if it's a valid hypothetical
+	                  	if(hypoGuesses[o][0]==1) {//triggers if there's row a guess flag
+	                  		hypoGuesses[o][0] = 0;//resets guess flag
+	                  		moreWorkToBeDone = true;
+	                  		validHypothetical = removeInvalidRowPermsHypo(o, rowPerms.get(o-1), rowReceptacle.get(o-1), hypoGuesses);
+	                  		//removes invalid row permutations from the relevant row permutations array list and does guess flagging       		      		
+	                  	}
+	                  	o++;
+	                  }
+	                  o = 1;
+	                  while(o<=s&&validHypothetical) {//doesn't enter this while loop if it's been flagged as an invalid hypothetical
+	                  	if(hypoGuesses[0][o]==1) {
+	                  		hypoGuesses[0][o] = 0;
+	                  		moreWorkToBeDone = true;
+	                  		validHypothetical = removeInvalidColumnPermsHypo(o,colPerms.get(o-1), colReceptacle.get(o-1),hypoGuesses);
+	                  	}
+	                  	o++;
+	                  }
+	                  printBoard(hypoBoard);
+	                  System.out.print("\n");
+	                  printGuesses(hypoBoard,hypoGuesses);
+	                  System.out.print("\n");
+	                  }   
+	           //same 3 outcomes here as previously mentioned
+	           if(validHypothetical&&!isComplete(rowPerms)) {
+	        	   System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") as "+hypoCandidate[3]+" at recursion level "+recursionLevel+" was inconclusive\ngoing 1 recursion level deeper");	        		   
+	        	   validHypothetical = hypotheticalRecursionTree(hypoBoard, hypoGuesses, rowPerms, colPerms, recursionLevel+1);
+	           }
+	           if(!validHypothetical) {
+	        	   System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") as "+hypoCandidate[3]+" at recursion level "+recursionLevel+" was also incorrect\nreturning to previous recursion level");	        		   
+	        	   returnFromReceptacle(colReceptacle, colPerms);
+	        	   returnFromReceptacle(rowReceptacle, rowPerms);
+	        	   //resets rowPerms and colPerms; don't really care about hypoBoard or hypoGuesses bc they get thrown out once i leave this recursion level
+	           }
+	   		}
+	   	return validHypothetical;
     }
     
 /**********************************************main function************************************************/
@@ -976,9 +1109,6 @@ public class skyscrapersSolver {
             printGuesses(board,guesses);
             System.out.print("\n");
         }
-        for(int t = 0; t<s; t++) {
-        	System.out.println(rowPerms.get(t).size() +" "+ colPerms.get(t).size());
-        }
         fromConsole.close();
         /******************************HYPOTHETICAL SECTION******************************/
         if(!isComplete(rowPerms)) {
@@ -987,101 +1117,8 @@ public class skyscrapersSolver {
         	 //in the guessing state, the program finds an arbitrary cell with only 2 valid guesses and arbitrarily guesses 1 of the 2 guesses
         	 //the program then takes that guess to its logical conclusion, i.e. treating that guess as if it's fact.
         	 //if the guess is found out to be incorrect, i.e. any of the array lists in rowPerms or colPerms has a size of 0, hypothetical state will abort and the other of the two guesses will be input
-        	 
-        	int[][] hypoBoard = new int[s+2][s+2], hypoGuesses = new int[s+2][s+2];
-        	//hypothetical board array and guesses array that's going to be what i'm working in in the hypothetical section
-        	ArrayList<ArrayList<int[]>> rowReceptacle = new ArrayList<ArrayList<int[]>>(), colReceptacle = new ArrayList<ArrayList<int[]>>();
-        	//i'm going to be removing arrays from the array lists in rowPerms and colPerms, but I don't want to just throw away those arrays in case the hypothetical is invalid
-        	//so i'm going to be putting them in these receptacle array lists, so that if the guess turns out to be invalid, i can just put them right back
-        	int[][] twoGuesses = new int[(s*(s-1))/2][3];
-        	//0-index column becomes an array of every possible value a guess array cell with two guesses can have
-        	//values will be [2^1+2^2, 2^1+2^3,....., 2^(s-2)+2^s, 2^(s-1)+2^s]
-        	//1-index and 2-index columns are just which powers of 2 are being summed, makes the findTwoGuesses function easier
-        	//it's triangular numbers so that's why it has that many rows
-        	hypoSetup(board, hypoBoard, guesses, hypoGuesses, rowReceptacle, colReceptacle, twoGuesses);
-        	//method that just sets everything up the way i've described it
-        	int[] hypoCandidate = findTwoGuesses(hypoGuesses, twoGuesses);
-        	insertNumberRoutine(hypoBoard, hypoGuesses, hypoCandidate[2], hypoCandidate[0], hypoCandidate[1]);
-        	//arbitrarily guesses the lower of the 2 guesses at the arbitrary 2-guess cell
-        	System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") is "+hypoCandidate[2]);
-        	h = 1;
-        	int o = 1;
-        	moreWorkToBeDone = true;
-        	boolean validHypothetical = true;
-        	while(moreWorkToBeDone&&validHypothetical) {
-            	System.out.println("~~~~~~~~~~~~~~~~~~~~~HYPOTHETICAL LOOP NUMBER "+h+"~~~~~~~~~~~~~~~~~~~~~");
-            	h++;
-            	o = 1;
-            	moreWorkToBeDone = false;//exits while loop once all there are no more guess flags
-                checkForSingularGuesses(hypoBoard, hypoGuesses);//checks the guesses matrix to see if any of the cells only have 1 guess
-                while(o<=s&&validHypothetical) {//changed this to a while loop bc it's also dependent on if it's a valid hypothetical
-                	if(hypoGuesses[o][0]==1) {//triggers if there's row a guess flag
-                		hypoGuesses[o][0] = 0;//resets guess flag
-                		moreWorkToBeDone = true;
-                		permsTemp = rowPerms.get(o-1);
-                		permsTemp2 = rowReceptacle.get(o-1);
-                		validHypothetical = removeInvalidRowPermsHypo(o, permsTemp, permsTemp2, hypoGuesses);
-                		//removes invalid row permutations from the relevant row permutations array list and does guess flagging       		
-                		rowPerms.set(o-1, permsTemp);
-                		rowReceptacle.set(o-1, permsTemp2);                		
-                	}
-                	o++;
-                }
-                o = 1;
-                while(o<=s&&validHypothetical) {//doesn't enter this while loop if it's been flagged as an invalid hypothetical
-                	if(hypoGuesses[0][o]==1) {
-                		hypoGuesses[0][o] = 0;
-                		moreWorkToBeDone = true;
-                		permsTemp = colPerms.get(o-1);
-                		permsTemp2 = colReceptacle.get(o-1);
-                		validHypothetical = removeInvalidColumnPermsHypo(o,permsTemp, permsTemp2,hypoGuesses);
-                		colPerms.set(o-1, permsTemp);
-                		colReceptacle.set(o-1, permsTemp2);
-                	}
-                	o++;
-                }
-                printBoard(hypoBoard);
-                System.out.print("\n");
-                printGuesses(hypoBoard,hypoGuesses);
-                System.out.print("\n");
-            }
-        	if(!validHypothetical) {
-        		System.out.println("guessing the value at ("+hypoCandidate[0]+","+hypoCandidate[1]+") as "+hypoCandidate[2]+" was incorrect\nit's true value is "+hypoCandidate[3]);
-        		returnFromReceptacle(colReceptacle, colPerms);
-        		returnFromReceptacle(rowReceptacle, rowPerms);
-        		insertNumberRoutine(board, guesses, hypoCandidate[3], hypoCandidate[0], hypoCandidate[1]);
-        		h = 1;
-                moreWorkToBeDone = true;
-                while(moreWorkToBeDone) {
-                	System.out.println("~~~~~~~~~~~~~~~~~~~~~LOOP NUMBER "+h+"~~~~~~~~~~~~~~~~~~~~~");
-                	h++;
-                	moreWorkToBeDone = false;//exits while loop once all there are no more guess flags
-                    checkForSingularGuesses(board, guesses);//checks the guesses matrix to see if any of the cells only have 1 guess
-                    for(int q = 1; q<=s; q++) {//loop for iterating over rows
-                    	if(guesses[q][0]==1) {//triggers if there's row a guess flag
-                    		guesses[q][0] = 0;//resets guess flag
-                    		moreWorkToBeDone = true;
-                    		permsTemp = rowPerms.get(q-1);
-                    		removeInvalidRowPerms(q, permsTemp, guesses);
-                    		//removes invalid row permutations from the relevant row permutations array list and does guess flagging
-                    		rowPerms.set(q-1, permsTemp);
-                    	}
-                    }
-                    for(int r = 1; r<=s; r++) {
-                    	if(guesses[0][r]==1) {
-                    		guesses[0][r] = 0;
-                    		moreWorkToBeDone = true;
-                    		permsTemp = colPerms.get(r-1);
-                    		removeInvalidColumnPerms(r,permsTemp,guesses);
-                    		colPerms.set(r-1, permsTemp);
-                    	}
-                    }
-                    printBoard(board);
-                    System.out.print("\n");
-                    printGuesses(board,guesses);
-                    System.out.print("\n");
-                }      		
-        	}
+        	 //if it's ever inconclusive for any guess i just go 1 level deeper into the recursion
+        	hypotheticalRecursionTree(board, guesses, rowPerms, colPerms, 1);
         }
     }
 }

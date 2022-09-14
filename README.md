@@ -22,3 +22,9 @@ however, i have no case for when the hypothetical is also inconclusive, which is
 so what i think i'm going to do next is try and take everything i've written and implement it as a recursion tree of sorts. 
 sort of a "oh, is the value at (3,1) not 2? then it's 4. does inputting 2 lead to the solution? great! is inputting 2 inconclusive? find the next 2-guess cell upon inputting 2. if neither guess works, it's not 2. if one of them works, whoopee. if it's inconclusive, rinse and repeat." 
 it feels like a kinda cheap way of solving this but i think it'll work
+
+EDIT #4 (9/14/22): it works now :) 
+implemented the hypothetical case as a recursion tree.
+i'm still going to be doing some testing on this though just to make sure. 
+next steps is converting this to JavaScript and implementing it in a userscript, but that's for a while away.
+i'm kinda tired of this project
